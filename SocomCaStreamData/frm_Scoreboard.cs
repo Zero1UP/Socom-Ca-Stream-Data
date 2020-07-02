@@ -11,6 +11,8 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using Memory;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using SocomCaStreamData.Controls;
 
 namespace SocomCaStreamData
 {
@@ -32,7 +34,7 @@ namespace SocomCaStreamData
         public frm_Scoreboard()
         {
             InitializeComponent();
-
+         
             
             this.TransparencyKey = (BackColor); // make GUI form transparent, also removes the border
 
@@ -81,32 +83,39 @@ namespace SocomCaStreamData
 
         public void resetPlayers()
         {
-            foreach (var label in pnl_Background.Controls.OfType<Label>())
+            foreach (var label in pnl_Background.Controls.OfType<PlayerDataLabel>())
             {
-                label.Text = "";
-                label.ForeColor = Color.FromArgb(175, 175, 175);
+                label.playerName = "";
+                label.playerNameColor = Color.FromArgb(175, 175, 175);
                 label.BackColor = Color.Transparent;
+
+                label.healthSet = false;
+                label.healthBarColor = Color.FromArgb(20, 20, 20);
+                label.playerHealth = 0;
             }
         }
 
-        public void setLabel(Label label,string playerName,string livingStatus)
+        public void setLabel(PlayerDataLabel label, PlayerDataModel player)
         {
-            label.Text = playerName;
-            if (livingStatus == "DEAD")
+            label.playerName = player._PlayerName;
+            label.healthBarColor = Color.FromArgb(25, 140, 25);
+            label.playerHealth = (int)player._PlayerHealth;
+            label.PDM = player;
+            
+            label.m = m;
+            if (player._LivingStatus == "DEAD")
             {
-                label.ForeColor = Color.FromArgb(175, 175, 175);
+               
+                label.playerNameColor = Color.FromArgb(175, 175, 175);
+          
             }
             else
             {
-                label.ForeColor = Color.FromArgb(215, 215, 215);
-                label.BackColor = Color.FromArgb(25, 60, 35);
+                label.playerNameColor = Color.FromArgb(255, 255, 255);
+              
             }
         }
 
-        private void playerName_OnClick(object sender, EventArgs e)
-        {
-
-        }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -137,7 +146,7 @@ namespace SocomCaStreamData
 
                 if ((m.ReadBytes(GameHelper.PLAYER_POINTER_ADDRESS, 4) != null) && (!m.ReadBytes(GameHelper.PLAYER_POINTER_ADDRESS, 4).SequenceEqual(new byte[] { 0, 0, 0, 0 })))
                 {
-                    if (m.ReadByte(GameHelper.GAME_ENDED_ADDRESS) == 1)
+                    if (m.ReadByte(GameHelper.GAME_ENDED_ADDRESS) == 0)
                     {
                         string playerDataLocationAddress = ByteConverstionHelper.byteArrayHexToAddressString(m.ReadBytes(GameHelper.PLAYER_POINTER_ADDRESS, 4));
                         string playerTeam = GameHelper.GetTeamName(ByteConverstionHelper.byteArrayHexToHexString(m.ReadBytes((int.Parse(playerDataLocationAddress, System.Globalization.NumberStyles.HexNumber) + GameHelper.PLAYER_TEAMID_OFFSET).ToString("X4"), 4)));
@@ -147,8 +156,11 @@ namespace SocomCaStreamData
                         int mercsRoundsWon = m.ReadByte(GameHelper.MERCS_WIN_COUNTER_ADDRESS);
                         int sealsAlive = m.ReadByte(GameHelper.SEALS_ALIVE_COUNTER_ADDRESS);
                         int mercsAlive = m.ReadByte(GameHelper.MERCS_ALIVE_COUNTER_ADDRESS);
-                        string roundTime = ByteConverstionHelper.convertBytesToString(m.ReadBytes(GameHelper.ROUND_TIMER_ADDRESS, 5));
 
+                        string roundTimePointerAdddress = ByteConverstionHelper.byteArrayHexToAddressString(m.ReadBytes(GameHelper.ROUND_TIMER_POINTER, 4));
+                        string roundTime = ByteConverstionHelper.convertBytesToString(m.ReadBytes((int.Parse(roundTimePointerAdddress, System.Globalization.NumberStyles.HexNumber) + 12).ToString("X4"), 5));
+
+                        //string roundTime = ByteConverstionHelper.convertBytesToString(m.ReadBytes(GameHelper.ROUND_TIMER_RESPAWN_ADDRESS, 5));
                         playerData = processPlayers();
 
                         resetPlayers();
@@ -159,25 +171,33 @@ namespace SocomCaStreamData
                                 if (item._Team == "SEALS")
                                 {
 
-                                    var labels = pnl_Background.Controls
-                                   .OfType<Label>()
-                                   .Where(label => label.Name.Contains("lbl_Seal_") && label.Text == "")
-                                   .OrderBy(label => label.Name); ;
-                                    setLabel(labels.First(), item._PlayerName, item._LivingStatus);
+                                var playerDataLabel = pnl_Background.Controls
+                               .OfType<PlayerDataLabel>()
+                               .Where(pdl => pdl.Name.Contains("lbl_Seal_") && pdl.Text == "")
+                               .OrderBy(label => label.Name); ;
+
+                                if (item._PlayerName == "DroPPinCliPz")
+                                {
 
                                 }
+                                setLabel(GetLabels("lbl_Seal_").First(), item);
+
+                            }
                                 else if (item._Team == "TERRORISTS")
                                 {
-                                    var labels = pnl_Background.Controls
-                                   .OfType<Label>()
-                                   .Where(label => label.Name.Contains("lbl_Terr_") && label.Text == "")
+                                var playerDataLabel = pnl_Background.Controls
+                                   .OfType<PlayerDataLabel>()
+                                   .Where(pdl => pdl.Name.Contains("lbl_Terr_") && pdl.Text == "")
                                    .OrderBy(label => label.Name);
-                                    setLabel(labels.First(), item._PlayerName, item._LivingStatus);
+                                    setLabel(GetLabels("lbl_Terr_").First(), item);
 
 
-                                }
                             }
+
+
+                       }
                         
+                            
 
                         lbl_S_Alive.Text = sealsAlive.ToString();
                         lbl_T_Alive.Text = mercsAlive.ToString();
@@ -200,7 +220,13 @@ namespace SocomCaStreamData
             }
         }
 
-
+        private List<PlayerDataLabel> GetLabels(string labelNameContents)
+        {
+            return pnl_Background.Controls
+                                    .OfType<PlayerDataLabel>()
+                                    .Where(label => label.Name.Contains(labelNameContents) && label.playerName == "")
+                                    .OrderBy(label => label.Name).ToList(); ;
+        }
         private List<PlayerDataModel> processPlayers()
         {
             List<PlayerDataModel> playerData = new List<PlayerDataModel>();

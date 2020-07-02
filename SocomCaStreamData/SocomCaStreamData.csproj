@@ -52,6 +52,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controls\HealthBar.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\HealthBar.Designer.cs">
+      <DependentUpon>HealthBar.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PlayerDataLabel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\PlayerDataLabel.Designer.cs">
+      <DependentUpon>PlayerDataLabel.cs</DependentUpon>
+    </Compile>
     <Compile Include="frm_Scoreboard.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -63,6 +75,12 @@
     <Compile Include="Models\PlayerDataModel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Controls\HealthBar.resx">
+      <DependentUpon>HealthBar.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PlayerDataLabel.resx">
+      <DependentUpon>PlayerDataLabel.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="frm_Scoreboard.resx">
       <DependentUpon>frm_Scoreboard.cs</DependentUpon>
     </EmbeddedResource>
